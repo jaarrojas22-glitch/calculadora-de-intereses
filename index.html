@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Calculadora de ahorros Efectibank - Simula el crecimiento de tu dinero al 4.5% TREA">
+  <title>Calculadora de Ahorros · Efectibank</title>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  
+  <style>
+    :root, [data-theme="dark"] {
+      --bg: #0b1220;
+      --bg-card: #141c2e;
+      --bg-input: #0f172a;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --primary: #0ea5e9;
+      --primary-dark: #0284c7;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --border: #1e293b;
+      --shadow: 0 8px 30px rgba(0,0,0,0.4);
+      --header-bg: linear-gradient(135deg, #0c4a6e 0%, #0f172a 100%);
+    }
+
+    [data-theme="light"] {
+      --bg: #f1f5f9;
+      --bg-card: #ffffff;
+      --bg-input: #f8fafc;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #0284c7;
+      --primary-dark: #0369a1;
+      --accent: #0ea5e9;
+      --success: #16a34a;
+      --border: #e2e8f0;
+      --shadow: 0 8px 30px rgba(0,0,0,0.08);
+      --header-bg: linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 100%);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 0 0 40px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .header {
+      background: var(--header-bg);
+      padding: 20px 16px 24px;
+      text-align: center;
+      position: relative;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: transform 0.2s;
+    }
+    .theme-toggle:active { transform: scale(0.92); }
+
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .logo-svg { width: 42px; height: 42px; }
+
+    .logo-text {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    .logo-text span { color: var(--primary); }
+
+    .header p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .container {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 16px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transition: background 0.3s, border 0.3s;
+    }
+
+    .rate-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(14, 165, 233, 0.12);
+      color: var(--accent);
+      padding: 7px 14px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 18px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .input-wrapper { position: relative; }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 1.1rem;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--primary); }
+
+    .input-prefix {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .input-wrapper.has-prefix input { padding-left: 38px; }
+
+    .input-suffix {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 6px 0;
+    }
+    .toggle-label { font-size: 0.95rem; font-weight: 500; }
+
+    .switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      inset: 0;
+      background: #475569;
+      border-radius: 28px;
+      transition: 0.3s;
+    }
+    .slider:before {
+      content: "";
+      position: absolute;
+      height: 22px;
+      width: 22px;
+      left: 3px;
+      bottom: 3px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.3s;
+    }
+    input:checked + .slider { background: var(--primary); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    #aporteMensualGroup { display: none; }
+    #aporteMensualGroup.show { display: block; }
+
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 14px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s;
+      margin-top: 6px;
+    }
+    .btn:active { transform: scale(0.98); }
+
+    .results { display: none; }
+    .results.show {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .result-main {
+      text-align: center;
+      padding: 12px 0 18px;
+    }
+    .result-main .label {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .result-main .amount {
+      font-size: 2.1rem;
+      font-weight: 800;
+      color: var(--success);
+      letter-spacing: -0.5px;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .result-box {
+      background: var(--bg-input);
+      border-radius: 12px;
+      padding: 14px;
+      text-align: center;
+    }
+    .result-box .label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .result-box .value { font-size: 1.1rem; font-weight: 700; }
+    .result-box.interest .value { color: var(--accent); }
+
+    .chart-container {
+      position: relative;
+      height: 220px;
+      margin: 10px 0 16px;
+    }
+
+    .table-wrapper {
+      max-height: 240px;
+      overflow-y: auto;
+      border-radius: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th {
+      text-align: left;
+      padding: 10px 8px;
+      color: var(--text-muted);
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+    }
+    td {
+      padding: 10px 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    tr:last-child td {
+      border-bottom: none;
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .note {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 14px;
+      line-height: 1.45;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      padding: 0 16px;
+    }
+
+    .install-hint {
+      background: rgba(14, 165, 233, 0.1);
+      border: 1px solid rgba(14, 165, 233, 0.25);
+      border-radius: 12px;
+      padding: 12px 14px;
+      margin-top: 16px;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .install-hint strong { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">☀️</button>
+    
+    <div class="logo-wrap">
+      <svg class="logo-svg" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="48" height="48" rx="12" fill="#0ea5e9"/>
+        <path d="M14 16h20v4H18v4h14v4H18v6h16v4H14V16z" fill="white"/>
+      </svg>
+      <div class="logo-text">Efecti<span>bank</span></div>
+    </div>
+    <p>Simula el crecimiento de tu dinero</p>
+  </div>
+
+  <div class="container">
+    <div class="card">
+      <div class="rate-badge">
+        <span>📈</span>
+        <span>Tasa oficial: 4.50% TREA</span>
+      </div>
+
+      <div class="form-group">
+        <label for="monto">¿Cuánto dinero quieres depositar?</label>
+        <div class="input-wrapper has-prefix">
+          <span class="input-prefix">S/</span>
+          <input type="number" id="monto" placeholder="1000" min="0" step="100" value="1000">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="tasa">Tasa de interés anual (TREA %)</label>
+        <div class="input-wrapper">
+          <input type="number" id="tasa" value="4.5" min="0" max="20" step="0.1">
+          <span class="input-suffix">%</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="anios">¿Por cuántos años quieres dejarlo?</label>
+        <div class="input-wrapper">
+          <input type="number" id="anios" value="5" min="1" max="40" step="1">
+          <span class="input-suffix">años</span>
+        </div>
+      </div>
+
+      <div class="toggle-row">
+        <span class="toggle-label">¿Vas a aportar cada mes?</span>
+        <label class="switch">
+          <input type="checkbox" id="toggleAporte">
+          <span class="slider"></span>
+        </label>
+      </div>
+
+      <div class="form-group" id="aporteMensualGroup">
+        <label for="aporte">Aporte mensual</label>
+        <div class="input-wrapper has-prefix">
+          <span class="input-prefix">S/</span>
+          <input type="number" id="aporte" placeholder="100" min="0" step="50" value="100">
+        </div>
+      </div>
+
+      <button class="btn" onclick="calcular()">Calcular crecimiento</button>
+    </div>
+
+    <div class="card results" id="resultados">
+      <div class="result-main">
+        <div class="label">Tu dinero al final será</div>
+        <div class="amount" id="montoFinal">S/ 0.00</div>
+      </div>
+
+      <div class="result-grid">
+        <div class="result-box">
+          <div class="label">Total aportado</div>
+          <div class="value" id="capitalInicial">S/ 0</div>
+        </div>
+        <div class="result-box interest">
+          <div class="label">Intereses ganados</div>
+          <div class="value" id="intereses">S/ 0</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <canvas id="growthChart"></canvas>
+      </div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Año</th>
+              <th>Saldo</th>
+              <th>Interés</th>
+            </tr>
+          </thead>
+          <tbody id="tablaAnios"></tbody>
+        </table>
+      </div>
+
+      <p class="note">
+        * Cálculo con capitalización mensual (más realista). Efectibank calcula intereses diariamente y los abona a fin de mes. Resultados referenciales. No incluye ITF ni posibles cambios de tasa.
+      </p>
+    </div>
+
+    <div class="install-hint">
+      <strong>📲 ¿Quieres usarla como app en tu celular?</strong><br>
+      <strong>iPhone:</strong> toca el botón de compartir → “Añadir a pantalla de inicio”.<br>
+      <strong>Android:</strong> menú ⋮ → “Instalar aplicación” o “Añadir a pantalla de inicio”.
+    </div>
+
+    <div class="footer">
+      Calculadora no oficial · Solo para fines informativos<br>
+      Tasa actual Efectibank: <strong>4.50% TREA</strong>
+    </div>
+  </div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+    themeToggle.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    themeToggle.addEventListener('click', () => {
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      themeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
+      if (window.myChart) updateChartColors();
+    });
+
+    const toggle = document.getElementById('toggleAporte');
+    const aporteGroup = document.getElementById('aporteMensualGroup');
+    toggle.addEventListener('change', () => {
+      aporteGroup.classList.toggle('show', toggle.checked);
+    });
+
+    function formatMoney(n) {
+      return 'S/ ' + n.toLocaleString('es-PE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    let myChart = null;
+
+    function getChartColors() {
+      const isDark = html.getAttribute('data-theme') === 'dark';
+      return {
+        grid: isDark ? 'rgba(148,163,184,0.15)' : 'rgba(100,116,139,0.15)',
+        text: isDark ? '#94a3b8' : '#64748b',
+        line: '#0ea5e9',
+        fill: isDark ? 'rgba(14,165,233,0.15)' : 'rgba(14,165,233,0.12)'
+      };
+    }
+
+    function updateChartColors() {
+      if (!myChart) return;
+      const colors = getChartColors();
+      myChart.options.scales.x.ticks.color = colors.text;
+      myChart.options.scales.y.ticks.color = colors.text;
+      myChart.options.scales.x.grid.color = colors.grid;
+      myChart.options.scales.y.grid.color = colors.grid;
+      myChart.data.datasets[0].borderColor = colors.line;
+      myChart.data.datasets[0].backgroundColor = colors.fill;
+      myChart.update();
+    }
+
+    function calcular() {
+      const P = parseFloat(document.getElementById('monto').value) || 0;
+      const tasaAnual = parseFloat(document.getElementById('tasa').value) || 0;
+      const anios = parseInt(document.getElementById('anios').value) || 0;
+      const conAporte = document.getElementById('toggleAporte').checked;
+      const aporteMensual = conAporte ? (parseFloat(document.getElementById('aporte').value) || 0) : 0;
+
+      if (P <= 0 || anios <= 0) {
+        alert('Por favor ingresa un monto y un plazo válidos.');
+        return;
+      }
+
+      const r = tasaAnual / 100;
+      const rMensual = Math.pow(1 + r, 1/12) - 1;
+
+      let saldo = P;
+      let totalAportes = P;
+      const filas = [];
+      const labels = [];
+      const dataSaldo = [];
+
+      labels.push('Inicio');
+      dataSaldo.push(P);
+
+      for (let año = 1; año <= anios; año++) {
+        let interesAnual = 0;
+        for (let mes = 1; mes <= 12; mes++) {
+          const interesMes = saldo * rMensual;
+          saldo += interesMes;
+          interesAnual += interesMes;
+          if (aporteMensual > 0) {
+            saldo += aporteMensual;
+            totalAportes += aporteMensual;
+          }
+        }
+        filas.push({ año, saldo, interes: interesAnual });
+        labels.push('Año ' + año);
+        dataSaldo.push(saldo);
+      }
+
+      const interesesTotales = saldo - totalAportes;
+
+      document.getElementById('montoFinal').textContent = formatMoney(saldo);
+      document.getElementById('capitalInicial').textContent = formatMoney(totalAportes);
+      document.getElementById('intereses').textContent = formatMoney(interesesTotales);
+
+      const tbody = document.getElementById('tablaAnios');
+      tbody.innerHTML = '';
+      filas.forEach(f => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + f.año + '</td><td>' + formatMoney(f.saldo) + '</td><td>' + formatMoney(f.interes) + '</td>';
+        tbody.appendChild(tr);
+      });
+
+      const colors = getChartColors();
+      const ctx = document.getElementById('growthChart').getContext('2d');
+      if (myChart) myChart.destroy();
+
+      myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Saldo',
+            data: dataSaldo,
+            borderColor: colors.line,
+            backgroundColor: colors.fill,
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: colors.line,
+            borderWidth: 2.5
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) { return formatMoney(ctx.raw); }
+              }
+            }
+          },
+          scales: {
+            x: {
+              ticks: { color: colors.text, maxRotation: 0, font: { size: 11 } },
+              grid: { color: colors.grid }
+            },
+            y: {
+              ticks: {
+                color: colors.text,
+                font: { size: 11 },
+                callback: function(v) {
+                  return 'S/ ' + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v);
+                }
+              },
+              grid: { color: colors.grid }
+            }
+          }
+        }
+      });
+
+      document.getElementById('resultados').classList.add('show');
+      document.getElementById('resultados').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    window.addEventListener('load', calcular);
+  </script>
+</body>
+</html>
